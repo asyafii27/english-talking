@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yourusername/english-conversation-partner/config"
@@ -21,8 +22,18 @@ func main() {
 	router := gin.Default()
 
 	// CORS middleware
+	allowedOrigins := map[string]bool{}
+	for _, o := range strings.Split(os.Getenv("FRONTEND_ORIGIN"), ",") {
+		if o = strings.TrimRight(strings.TrimSpace(o), "/"); o != "" {
+			allowedOrigins[o] = true
+		}
+	}
+
 	router.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", os.Getenv("FRONTEND_ORIGIN"))
+		if origin := c.GetHeader("Origin"); allowedOrigins[origin] {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+			c.Writer.Header().Set("Vary", "Origin")
+		}
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
