@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(New-Item -ItemType Directory -Path \"E:\\\\fe_be\\\\english-tts\\\\backend\\\\migrations\" -Force)",
+      "PowerShell(New-Item -ItemType Directory -Path \"E:\\\\fe_be\\\\english-tts\\\\backend\\\\db\" -Force)",
+      "PowerShell(go version)",
+      "PowerShell(cd E:\\\\fe_be\\\\english-tts\\\\backend; go mod tidy; if \\($?\\) { go build -o $env:TEMP\\\\main.exe ./cmd/main.go; if \\($?\\) { \"BUILD OK\" } })"
+    ]
+  }
+}
