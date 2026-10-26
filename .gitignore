@@ -24,3 +24,5 @@ vendor/
 dist/
 build/
 *.exe
+
+.claude
