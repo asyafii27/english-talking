@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(New-Item -ItemType Directory -Path \"E:\\\\fe_be\\\\english-tts\\\\backend\\\\migrations\" -Force)",
+      "PowerShell(New-Item -ItemType Directory -Path \"E:\\\\fe_be\\\\english-tts\\\\backend\\\\db\" -Force)",
+      "PowerShell(go version)",
+      "PowerShell(cd E:\\\\fe_be\\\\english-tts\\\\backend; go mod tidy; if \\($?\\) { go build -o $env:TEMP\\\\main.exe ./cmd/main.go; if \\($?\\) { \"BUILD OK\" } })",
+      "PowerShell(cd E:\\\\fe_be\\\\english-tts\\\\backend; gofmt -w .; go vet ./...; if \\($?\\) { \"GO OK\" }; cd ..\\\\frontend; if \\(-not \\(Test-Path node_modules\\)\\) { npm install --silent }; npx tsc --noEmit -p tsconfig.json; if \\($?\\) { \"TS OK\" })",
+      "PowerShell(npm install --no-audit --no-fund 2>$null)",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json)",
+      "PowerShell($f=\"$env:TEMP\\\\chat.json\"; '{\"message\":\"I am go to office yesterday\",\"voice_mode\":true}' | Out-File -Encoding ascii $f; curl.exe -s -X POST http://localhost:8081/api/chat -H \"Content-Type: application/json\" --data-binary \"@$f\")",
+      "PowerShell(docker compose up -d 2>&1)",
+      "PowerShell(docker compose ps --format \"{{.Name}} {{.Ports}}\")",
+      "PowerShell(curl.exe -s http://localhost:8081/api/conversations)"
+    ]
+  }
+}

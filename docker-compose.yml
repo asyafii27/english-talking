@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: english-tts-db
+    environment:
+      POSTGRES_USER: english_user
+      POSTGRES_PASSWORD: english_password
+      POSTGRES_DB: english_conversation
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U english_user -d english_conversation"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - english-tts-network
+
+volumes:
+  postgres_data:
+
+networks:
+  english-tts-network:
+    driver: bridge
