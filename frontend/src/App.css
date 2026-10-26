@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0284c7 100%);
 }
 
 .header {
@@ -413,6 +413,19 @@ button:disabled {
 
 .audio-controls option {
   color: black;
+}
+
+.test-voice-button {
+  padding: 3px 10px;
+  font-size: 0.85em;
+  margin-left: 6px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.test-voice-button:hover {
+  background-color: rgba(255, 255, 255, 0.35);
 }
 
 @media (max-width: 768px) {

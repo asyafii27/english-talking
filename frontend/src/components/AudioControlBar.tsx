@@ -3,6 +3,10 @@ interface Props {
   onAutoSpeakChange: (value: boolean) => void
   rate: number
   onRateChange: (value: number) => void
+  voices: SpeechSynthesisVoice[]
+  selectedVoiceURI: string
+  onVoiceChange: (value: string) => void
+  onTestVoice: () => void
 }
 
 const RATES = [
@@ -10,6 +14,16 @@ const RATES = [
   { value: 1, label: '1.0x (Normal)' },
   { value: 1.25, label: '1.25x (Fast)' },
 ]
+
+function formatVoiceName(name: string): string {
+  return name
+    .replace('Microsoft ', '')
+    .replace(' Online (Natural)', ' (Natural ⭐)')
+    .replace(' - English (United States)', ' (US)')
+    .replace(' - English (United Kingdom)', ' (UK)')
+    .replace(' - English (Australia)', ' (AU)')
+    .replace(' - English (India)', ' (IN)')
+}
 
 export default function AudioControlBar(props: Props) {
   return (
@@ -22,6 +36,31 @@ export default function AudioControlBar(props: Props) {
         />
         Auto Speak AI
       </label>
+
+      {props.voices.length > 0 && (
+        <label>
+          Voice
+          <select
+            value={props.selectedVoiceURI}
+            onChange={(e) => props.onVoiceChange(e.target.value)}
+          >
+            {props.voices.map((v) => (
+              <option key={v.voiceURI} value={v.voiceURI}>
+                {formatVoiceName(v.name)}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="test-voice-button"
+            onClick={props.onTestVoice}
+            title="Dengarkan contoh suara"
+          >
+            ▶ Test
+          </button>
+        </label>
+      )}
+
       <label>
         Speed
         <select value={props.rate} onChange={(e) => props.onRateChange(Number(e.target.value))}>

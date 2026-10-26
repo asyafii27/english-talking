@@ -228,6 +228,12 @@ function App() {
           }}
           rate={tts.rate}
           onRateChange={tts.setRate}
+          voices={tts.voices}
+          selectedVoiceURI={tts.selectedVoiceURI}
+          onVoiceChange={tts.setVoiceURI}
+          onTestVoice={() =>
+            tts.speak("Hello! I'm your English conversation partner. How are you doing today?")
+          }
         />
 
         <div className="input-area">

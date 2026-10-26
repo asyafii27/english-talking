@@ -9,37 +9,97 @@ export function cleanTextForSpeech(text: string): string {
     .trim()
 }
 
-const PREFERRED_VOICES = ['Natural', 'Google US English', 'Google UK English', 'Samantha']
+// Friendly & Natural voices ranked by warmth and conversational quality
+const PREFERRED_VOICE_KEYWORDS = [
+  'Jenny', // Microsoft Jenny Online (Natural) - very friendly conversational female voice
+  'Aria', // Microsoft Aria Online (Natural) - polite, pleasant
+  'Guy', // Microsoft Guy Online (Natural) - friendly conversational male voice
+  'Ana', // Microsoft Ana Online (Natural)
+  'Google US English', // Chrome friendly US voice
+  'Google UK English Female',
+  'Natural', // Any Edge/Windows Online Natural voice
+  'Samantha', // macOS friendly voice
+  'Zira', // Windows desktop female voice
+]
 
-function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  const english = voices.filter((v) => v.lang.toLowerCase().startsWith('en'))
-  for (const name of PREFERRED_VOICES) {
-    const match = english.find((v) => v.name.includes(name))
+const STORAGE_VOICE_KEY = 'preferredVoiceURI'
+
+function filterEnglishVoices(all: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
+  return all.filter((v) => v.lang.toLowerCase().startsWith('en'))
+}
+
+function findBestFriendlyVoice(
+  voices: SpeechSynthesisVoice[],
+  savedURI?: string | null,
+): SpeechSynthesisVoice | null {
+  if (voices.length === 0) return null
+
+  // 1. Check if user previously saved a preference
+  if (savedURI) {
+    const found = voices.find((v) => v.voiceURI === savedURI)
+    if (found) return found
+  }
+
+  // 2. Look for preferred friendly/natural voices
+  for (const keyword of PREFERRED_VOICE_KEYWORDS) {
+    const match = voices.find((v) => v.name.includes(keyword))
     if (match) return match
   }
-  return english[0] ?? null
+
+  // 3. Fallback to any en-US or first English voice
+  const usVoice = voices.find((v) => v.lang.toLowerCase() === 'en-us')
+  return usVoice || voices[0] || null
 }
 
 export function useTextToSpeech() {
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null)
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>(() => {
+    try {
+      return localStorage.getItem(STORAGE_VOICE_KEY) || ''
+    } catch {
+      return ''
+    }
+  })
   const [rate, setRate] = useState(1)
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
 
+  const updateVoices = useCallback(() => {
+    if (!isSupported) return
+    const all = window.speechSynthesis.getVoices()
+    const english = filterEnglishVoices(all)
+    setVoices(english)
+
+    setSelectedVoiceURI((prevURI) => {
+      const best = findBestFriendlyVoice(english, prevURI)
+      return best ? best.voiceURI : ''
+    })
+  }, [isSupported])
+
   useEffect(() => {
     if (!isSupported) return
-    const load = () => setVoice(pickVoice(window.speechSynthesis.getVoices()))
-    load()
-    window.speechSynthesis.addEventListener('voiceschanged', load)
-    return () => window.speechSynthesis.removeEventListener('voiceschanged', load)
-  }, [isSupported])
+    updateVoices()
+    window.speechSynthesis.addEventListener('voiceschanged', updateVoices)
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', updateVoices)
+  }, [isSupported, updateVoices])
+
+  const setVoiceURI = useCallback((uri: string) => {
+    setSelectedVoiceURI(uri)
+    try {
+      localStorage.setItem(STORAGE_VOICE_KEY, uri)
+    } catch {
+      // ignore storage error
+    }
+  }, [])
 
   const stop = useCallback(() => {
     if (!isSupported) return
     window.speechSynthesis.cancel()
     setIsSpeaking(false)
   }, [isSupported])
+
+  const currentVoice = voices.find((v) => v.voiceURI === selectedVoiceURI) || null
 
   const speak = useCallback(
     (text: string) => {
@@ -48,12 +108,23 @@ export function useTextToSpeech() {
       if (!clean) return
       window.speechSynthesis.cancel()
       const utterance = new SpeechSynthesisUtterance(clean)
-      utterance.lang = voice?.lang ?? 'en-US'
-      if (voice) utterance.voice = voice
+
+      const activeVoice = voices.find((v) => v.voiceURI === selectedVoiceURI) || currentVoice
+      if (activeVoice) {
+        utterance.voice = activeVoice
+        utterance.lang = activeVoice.lang
+      } else {
+        utterance.lang = 'en-US'
+      }
+
       utterance.rate = rate
+      // Slightly warmer pitch for friendlier and less robotic tone
+      utterance.pitch = 1.05
+
       utterance.onstart = () => setIsSpeaking(true)
       utterance.onend = () => setIsSpeaking(false)
       utterance.onerror = () => setIsSpeaking(false)
+
       // Chrome drops utterances queued right after cancel() and can garbage-collect them mid-speech.
       utteranceRef.current = utterance
       setTimeout(() => {
@@ -61,8 +132,18 @@ export function useTextToSpeech() {
         window.speechSynthesis.speak(utterance)
       }, 100)
     },
-    [isSupported, voice, rate],
+    [isSupported, voices, selectedVoiceURI, currentVoice, rate],
   )
 
-  return { isSupported, isSpeaking, speak, stop, rate, setRate }
+  return {
+    isSupported,
+    isSpeaking,
+    speak,
+    stop,
+    rate,
+    setRate,
+    voices,
+    selectedVoiceURI,
+    setVoiceURI,
+  }
 }
