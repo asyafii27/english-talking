@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS messages (
   conversation_id UUID NOT NULL,
   role VARCHAR(50) NOT NULL,
   content TEXT NOT NULL,
+  correction JSONB,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
 );
