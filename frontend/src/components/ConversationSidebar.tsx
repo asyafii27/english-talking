@@ -3,17 +3,38 @@ import type { Conversation } from '../types/chat'
 interface Props {
   conversations: Conversation[]
   activeId: string | null
+  isOpen: boolean
   onSelect: (id: string) => void
   onNew: () => void
   onDelete: (id: string) => void
+  onToggle: () => void
 }
 
-export default function ConversationSidebar({ conversations, activeId, onSelect, onNew, onDelete }: Props) {
+export default function ConversationSidebar({
+  conversations,
+  activeId,
+  isOpen,
+  onSelect,
+  onNew,
+  onDelete,
+  onToggle,
+}: Props) {
   return (
-    <aside className="sidebar">
-      <button type="button" className="new-conversation" onClick={onNew}>
-        + New conversation
-      </button>
+    <aside className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
+      <div className="sidebar-top">
+        <button type="button" className="new-conversation" onClick={onNew}>
+          + New conversation
+        </button>
+        <button
+          type="button"
+          className="sidebar-close-btn"
+          onClick={onToggle}
+          title="Tutup sidebar"
+          aria-label="Tutup sidebar"
+        >
+          ✕
+        </button>
+      </div>
       <div className="conversation-list">
         {conversations.length === 0 && <p className="empty">Belum ada percakapan.</p>}
         {conversations.map((c) => (

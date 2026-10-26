@@ -28,10 +28,24 @@ function writeActiveId(id: string | null) {
   }
 }
 
+const THEME_KEY = 'appTheme'
+
+function readTheme(): 'light' | 'dark' {
+  try {
+    const saved = localStorage.getItem(THEME_KEY)
+    if (saved === 'dark' || saved === 'light') return saved
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
+}
+
 function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeId, setActiveId] = useState<string | null>(readActiveId)
+  const [theme, setTheme] = useState<'light' | 'dark'>(readTheme)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [autoSpeak, setAutoSpeak] = useState(true)
@@ -142,21 +156,55 @@ function App() {
 
   const liveText = stt.isListening ? `${stt.transcript} ${stt.interim}`.trim() : ''
 
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === 'light' ? 'dark' : 'light'
+      try {
+        localStorage.setItem(THEME_KEY, next)
+      } catch {
+        // ignore
+      }
+      return next
+    })
+  }
+
   return (
-    <div className="app-container">
+    <div className={`app-container ${theme}`}>
       <div className="header">
-        <h1>🎓 English Conversation Partner</h1>
-        <p>Learn English by chatting with AI</p>
+        <button
+          type="button"
+          className="header-toggle-btn"
+          onClick={() => setSidebarOpen((prev) => !prev)}
+          title={sidebarOpen ? 'Tutup sidebar' : 'Buka riwayat percakapan'}
+          aria-label="Toggle sidebar"
+        >
+          {sidebarOpen ? '◀ Tutup' : '☰ Riwayat'}
+        </button>
+        <div className="header-titles">
+          <h1>🎓 English Conversation Partner</h1>
+          <p>Learn English by chatting with AI</p>
+        </div>
+        <button
+          type="button"
+          className="theme-toggle-btn"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Malam'}
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? '☀️ Terang' : '🌙 Gelap'}
+        </button>
       </div>
 
       <div className="main-layout">
-      <ConversationSidebar
-        conversations={conversations}
-        activeId={activeId}
-        onSelect={selectConversation}
-        onNew={() => selectConversation(null)}
-        onDelete={deleteConversation}
-      />
+        <ConversationSidebar
+          conversations={conversations}
+          activeId={activeId}
+          isOpen={sidebarOpen}
+          onSelect={selectConversation}
+          onNew={() => selectConversation(null)}
+          onDelete={deleteConversation}
+          onToggle={() => setSidebarOpen((prev) => !prev)}
+        />
 
       <div className="chat-container">
         <div className="messages">
