@@ -554,6 +554,21 @@
   font-weight: 500;
 }
 
+.headset-control {
+  background: var(--primary-ultra-light);
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px dashed var(--primary);
+  color: #0284c7 !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.headset-control:hover {
+  background: var(--primary-light);
+}
+
 .audio-controls select {
   background: var(--white);
   color: var(--text-dark);
@@ -875,6 +890,16 @@ button:hover {
 .app-container.dark .audio-controls option {
   background: #17243b;
   color: #f8fafc;
+}
+
+.app-container.dark .headset-control {
+  background: #142842;
+  border-color: rgba(57, 189, 221, 0.4);
+  color: #7dd3fc !important;
+}
+
+.app-container.dark .headset-control:hover {
+  background: #1b3558;
 }
 
 .app-container.dark .input-area {

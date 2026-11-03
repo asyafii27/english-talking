@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './App.css'
 import MicButton from './components/MicButton'
 import VoiceVisualizer, { type VoiceStatus } from './components/VoiceVisualizer'
 import AudioControlBar from './components/AudioControlBar'
 import { useTextToSpeech } from './hooks/useTextToSpeech'
 import { useSpeechRecognition } from './hooks/useSpeechRecognition'
+import { useHeadsetRemote, playRemoteChime } from './hooks/useHeadsetRemote'
 import ConversationSidebar from './components/ConversationSidebar'
 import { chatApi } from './services/chatApi'
 import type { ChatMessage, Conversation } from './types/chat'
@@ -40,18 +41,51 @@ function readTheme(): 'light' | 'dark' {
   }
 }
 
+const HEADSET_KEY = 'headsetRemoteMode'
+
 function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeId, setActiveId] = useState<string | null>(readActiveId)
   const [theme, setTheme] = useState<'light' | 'dark'>(readTheme)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [headsetMode, setHeadsetMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(HEADSET_KEY) === 'true'
+    } catch {
+      return false
+    }
+  })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [autoSpeak, setAutoSpeak] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const sttRef = useRef<{ isListening: boolean; startListening: () => void } | null>(null)
 
-  const tts = useTextToSpeech()
+  const handleHeadsetModeChange = (enabled: boolean) => {
+    setHeadsetMode(enabled)
+    try {
+      localStorage.setItem(HEADSET_KEY, String(enabled))
+    } catch {
+      // ignore
+    }
+    if (enabled) {
+      playRemoteChime('start')
+    }
+  }
+
+  const tts = useTextToSpeech({
+    onEnd: () => {
+      if (headsetMode && autoSpeak) {
+        setTimeout(() => {
+          if (sttRef.current && !sttRef.current.isListening) {
+            playRemoteChime('start')
+            sttRef.current.startListening()
+          }
+        }, 600)
+      }
+    },
+  })
 
   const refreshConversations = () =>
     chatApi.listConversations().then(setConversations).catch(() => setConversations([]))
@@ -125,19 +159,23 @@ function App() {
     onFinal: (text) => sendMessage(text),
     silenceMs: 3000,
   })
+  sttRef.current = stt
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, loading])
-
-  const handleMicClick = () => {
+  const handleMicClick = useCallback(() => {
     if (stt.isListening) {
+      if (headsetMode) playRemoteChime('stop')
       stt.stopListening()
     } else {
       tts.stop()
+      if (headsetMode) playRemoteChime('start')
       stt.startListening()
     }
-  }
+  }, [stt, tts, headsetMode])
+
+  useHeadsetRemote({
+    enabled: headsetMode,
+    onToggleMic: handleMicClick,
+  })
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -282,6 +320,8 @@ function App() {
           onTestVoice={() =>
             tts.speak("Hello! I'm your English conversation partner. How are you doing today?")
           }
+          headsetMode={headsetMode}
+          onHeadsetModeChange={handleHeadsetModeChange}
         />
 
         <div className="input-area">

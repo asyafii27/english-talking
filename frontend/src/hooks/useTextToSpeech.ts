@@ -51,10 +51,16 @@ function findBestFriendlyVoice(
   return usVoice || voices[0] || null
 }
 
-export function useTextToSpeech() {
+interface UseTextToSpeechOptions {
+  onEnd?: () => void
+}
+
+export function useTextToSpeech(options: UseTextToSpeechOptions = {}) {
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const onEndRef = useRef(options.onEnd)
+  onEndRef.current = options.onEnd
   const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>(() => {
     try {
       return localStorage.getItem(STORAGE_VOICE_KEY) || ''
@@ -122,7 +128,10 @@ export function useTextToSpeech() {
       utterance.pitch = 1.05
 
       utterance.onstart = () => setIsSpeaking(true)
-      utterance.onend = () => setIsSpeaking(false)
+      utterance.onend = () => {
+        setIsSpeaking(false)
+        onEndRef.current?.()
+      }
       utterance.onerror = () => setIsSpeaking(false)
 
       // Chrome drops utterances queued right after cancel() and can garbage-collect them mid-speech.

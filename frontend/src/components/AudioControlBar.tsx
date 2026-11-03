@@ -7,6 +7,8 @@ interface Props {
   selectedVoiceURI: string
   onVoiceChange: (value: string) => void
   onTestVoice: () => void
+  headsetMode: boolean
+  onHeadsetModeChange: (value: boolean) => void
 }
 
 const RATES = [
@@ -35,6 +37,18 @@ export default function AudioControlBar(props: Props) {
           onChange={(e) => props.onAutoSpeakChange(e.target.checked)}
         />
         Auto Speak AI
+      </label>
+
+      <label
+        className="headset-control"
+        title="Buka/tutup mic langsung dari tombol di headset Bluetooth jarak jauh Anda"
+      >
+        <input
+          type="checkbox"
+          checked={props.headsetMode}
+          onChange={(e) => props.onHeadsetModeChange(e.target.checked)}
+        />
+        🎧 Headset Remote
       </label>
 
       {props.voices.length > 0 && (
